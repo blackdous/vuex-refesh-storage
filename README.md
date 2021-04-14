@@ -1,0 +1,2 @@
+# vuex-localForage
+本项目作为一个Vuex 插件，用于把store中的数据通过localForage存储到indexDB中
