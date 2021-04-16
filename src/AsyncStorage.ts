@@ -1,7 +1,11 @@
-/*
- * @Descripttion: 
- * @Author: 19080088
- * @Date: 2021-04-15 16:27:40
- * @LastEditors: 19080088
- * @LastEditTime: 2021-04-15 16:27:41
- */
+export interface AsyncStorage {
+  _config?: {
+    name: string
+  }
+  getItem<T>(key: string): Promise<T>
+  setItem<T>(key: string, data: T): Promise<T>
+  removeItem(key: string): Promise<void>
+  clear(): Promise<void>
+  length(): Promise<number>
+  key(keyIndex: number): Promise<string>
+}
