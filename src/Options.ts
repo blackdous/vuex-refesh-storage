@@ -1,5 +1,14 @@
-import { Payload } from 'vuex'
+/*
+ * @Descripttion: 
+ * @Author: 19080088
+ * @Date: 2021-04-18 21:26:16
+ * @LastEditors: 19080088
+ * @LastEditTime: 2021-04-18 22:04:27
+ */
+import { Store, MutationPayload } from 'vuex'
 import { AsyncStorage } from './AsyncStorage'
+import DefaultStorage from './DefaultStorage'
+import deepmerge from 'deepmerge'
 export interface Options<State> {
   /**
    * Key to use to save the state into the storage
@@ -8,7 +17,9 @@ export interface Options<State> {
   /**
    * Window.Storage type object. Default is localStorage
   */
-  storage?: Storage | AsyncStorage
+  modules?: string[]
+
+  storage?: Storage | DefaultStorage | AsyncStorage
   /**
    * method to set state
    * @param key
@@ -21,4 +32,11 @@ export interface Options<State> {
    */
   getState?: (key: string, storage: Storage) => any
 
+  filter?: (mutation: MutationPayload) => boolean
+
+  reducer?: (state: State, modules: string[]) => object
+
+  subscribe?: (
+    store: Store<State>
+  ) => (handler: (mutation: any, state: State) => void) => void
 }
