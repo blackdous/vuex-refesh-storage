@@ -3,12 +3,12 @@
  * @Author: 19080088
  * @Date: 2021-04-18 21:26:16
  * @LastEditors: 19080088
- * @LastEditTime: 2021-04-19 16:16:26
+ * @LastEditTime: 2021-04-20 17:41:52
  */
 import { Store, MutationPayload } from 'vuex'
 import { AsyncStorage } from './AsyncStorage'
 import DefaultStorage from './DefaultStorage'
-import deepmerge from 'deepmerge'
+
 export interface Options<State> {
   /**
    * Key to use to save the state into the storage
@@ -19,13 +19,21 @@ export interface Options<State> {
    */
   modules?: string[]
   /**
+   * state init getState()
+   */
+  initStorage?: boolean
+  /**
+   * init state overwirte or merge
+   */
+  overwrite?: boolean
+  /**
    * Window.Storage type object. Default is localStorage
   */
   storage?: Storage | DefaultStorage | AsyncStorage
   /**
    * default window.JSON or flatted
    */
-  jsonParse? : object
+  jsonParse? : JSON
   /**
    * storage is AsyncStorage
    */
@@ -36,18 +44,26 @@ export interface Options<State> {
    * @param state
    * @param storage
    */
-  setState?: (key: string, state: any, storage: Storage) => Promise<void> | void
+  setState?: (key: string, state: any, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
   /**
    * method to get state
    */
-  getState?: (key: string, storage: Storage) => Promise<void> | void
+  getState?: (key: string, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
   /**
    * filter state.replace
    */
   filter?: (mutation: MutationPayload) => boolean
 
-  reducer?: (state: State, modules: string[]) => object
-
+  reducer?: (state: State) => {}
+  /**
+   * Method to retrieve state from persistence
+   * @param {String} key
+   * @param {Object} [storage]
+   */
+  restoreState?: (key: string, storage?: Storage) => Promise<State> | State
+  /**
+   * subscribe mutation to update state
+   */
   subscribe?: (
     store: Store<State>
   ) => (handler: (mutation: any, state: State) => void) => void
