@@ -17,6 +17,11 @@
     "noImplicitAny": true,
     "noImplicitThis": true,
     "strictNullChecks": true
+    // ,
+    // "typeRoots": [
+    //   "./types/index.d.ts",
+    //   "./node_modules/@types"
+    // ],    
   },
   "include": [
     "src"

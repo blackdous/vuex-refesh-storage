@@ -1,5 +1,5 @@
 module.exports = {
-  parset: 'ts-jest',
+  preset: 'ts-jest',
   rootDir: __dirname,
   globals: {
     __DEV__: true
@@ -11,13 +11,7 @@ module.exports = {
   testMatch: ['<rootDir>/test/**/*.spec.ts'],
   testPathIgnorePatterns: ['/node_modules/'],
   coverageDirectory: 'coverage',
-  coverageReporters: ['json', 'lcov', 'text-summary', 'clover'],
   collectCoverageFrom: [
-    'src/**/*.ts',
-    '!src/attributes/types/Increment.ts',
-    '!src/polyfills/index.ts',
-    '!src/support/Utils.ts',
-    '!src/index.cjs.ts',
-    '!src/index.ts'
+    'src/**/*.ts'
   ]
 }

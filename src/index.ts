@@ -3,7 +3,7 @@
  * @Author: 19080088
  * @Date: 2021-04-19 08:51:29
  * @LastEditors: 19080088
- * @LastEditTime: 2021-04-20 17:52:18
+ * @LastEditTime: 2021-04-21 13:48:38
  */
 import { Mutation, MutationPayload, Payload, Plugin, Store } from 'vuex';
 import { AsyncStorage } from './AsyncStorage';
@@ -41,7 +41,7 @@ export class VuexRefeshStorage<State> implements Options<State> {
   public setState: (key: string, state: any, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
   public reducer: (state: State) => Partial<State>
   public filter: (mutation: Payload) => boolean
-  public subscribe: (store: Store<State>) => (handler: (mutation: any, state: State) => void) => void
+  // public subscribe: (store: Store<State>) => (handler: (mutation: any, state: State) => void) => void
 
   /**
    * store plugin functions
@@ -53,7 +53,7 @@ export class VuexRefeshStorage<State> implements Options<State> {
    * when this is used a vuex plugin. Not for manual usage.
    * @param store
    */
-  private subscriber = (store: Store<State>) =>
+  public subscribe = (store: Store<State>) =>
     (handler: (mutation: MutationPayload, state: State) => any) => store.subscribe(handler)
 
   public constructor(options?: Options<State>) {
@@ -61,7 +61,7 @@ export class VuexRefeshStorage<State> implements Options<State> {
     options = options || {};
 
     this.storage = options.storage || (window && window.localStorage);
-    this.key = options.key || "normal";
+    this.key = options.key || "vuex";
     
     this.filter = options.filter || ((mutation) => true)
 
@@ -69,9 +69,10 @@ export class VuexRefeshStorage<State> implements Options<State> {
 
     this.async = options.async || false
 
-    this.initStorage = options.initStorage || false
+    this.initStorage = options.initStorage === undefined ? true : options.initStorage
+    // console.log('this.initStorage: ', this.initStorage)
 
-    this.overwrite = options.overwrite || true
+    this.overwrite = options.overwrite || false
 
     this.setState = (
       options.setState ? 
@@ -99,7 +100,12 @@ export class VuexRefeshStorage<State> implements Options<State> {
         : ((key: string, storage: Storage) => {
           const value = storage.getItem(key)
           if (typeStr(value) === 'String') {
-            return jsonParse.parse(value || '{}')
+            try {
+              return jsonParse.parse(value || '{}')
+            } catch (err) {
+              throw new Error(err)
+            }
+        
           } else {
             return value || {}
           }
@@ -107,11 +113,15 @@ export class VuexRefeshStorage<State> implements Options<State> {
 
         this.install = (store: Store<State>) => {
           const initState = this.initStorage ? this.getState(this.key, this.storage) : {}
+          // console.log('initState: ', initState);
           const reState = this.overwrite ? initState : merge(store.state, initState || {}, {})
+          // console.log('reState: ', reState);
           store.replaceState(reState as State)
 
           this.subscribe(store)((mutation: MutationPayload, state: State) => {
+            // console.log('this.filter(mutation): ', this.filter(mutation));
             if (this.filter(mutation)) {
+              // console.log('this.reducer(state): ', this.reducer(state));
               this.setState(this.key, this.reducer(state), this.storage)
             }
           })
