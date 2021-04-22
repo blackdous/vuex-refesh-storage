@@ -1,11 +1,4 @@
-/*
- * @Descripttion: 
- * @Author: 19080088
- * @Date: 2021-04-19 08:51:29
- * @LastEditors: 19080088
- * @LastEditTime: 2021-04-21 13:48:38
- */
-import { Mutation, MutationPayload, Payload, Plugin, Store } from 'vuex';
+import { MutationPayload, Payload, Plugin, Store } from 'vuex';
 import { AsyncStorage } from './AsyncStorage';
 import DefaultStorage from './DefaultStorage';
 import { Options } from './Options';
@@ -28,20 +21,26 @@ export class VuexRefeshStorage<State> implements Options<State> {
    */
   public modules: string[]
   /**
-   * window.localstorage
+   * global.JSON、LocalForage、sessionStorage、localForage
    */
   public storage: Storage | AsyncStorage | DefaultStorage
+  // storage must be async
   public async: boolean
+  // global.JSON or flatted { parse, stringify }
   public jsonParse: JSON
+  // get storage state init to vue state
   public initStorage: boolean
+  // init state use deepmerge
   public overwrite: boolean
 
-  
+  // use deepMerge object merge(target, source, options)
+  public deepMergeOptions: object
+
   public getState: (key: string, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
   public setState: (key: string, state: any, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
   public reducer: (state: State) => Partial<State>
   public filter: (mutation: Payload) => boolean
-  // public subscribe: (store: Store<State>) => (handler: (mutation: any, state: State) => void) => void
+
 
   /**
    * store plugin functions
@@ -62,38 +61,47 @@ export class VuexRefeshStorage<State> implements Options<State> {
 
     this.storage = options.storage || (window && window.localStorage);
     this.key = options.key || "vuex";
+    this.deepMergeOptions = options.deepMergeOptions || {}
+    
+    this.jsonParse = options.jsonParse || JSON
+    
+    this.async = options.async || false
+    this.initStorage = options.initStorage === undefined ? true : options.initStorage
+    this.overwrite = options.overwrite || false
     
     this.filter = options.filter || ((mutation) => true)
-
-    const jsonParse = options.jsonParse || JSON 
-
-    this.async = options.async || false
-
-    this.initStorage = options.initStorage === undefined ? true : options.initStorage
-    // console.log('this.initStorage: ', this.initStorage)
-
-    this.overwrite = options.overwrite || false
-
     this.setState = (
       options.setState ? 
         options.setState : 
         (key: string, state: {}, storage: AsyncStorage) =>
-          storage.setItem(key, this.async ? merge({}, state || {}, {}) : jsonParse.stringify(state) as any)
+          storage.setItem(key, this.async ? merge({}, state || {}, this.deepMergeOptions) : this.jsonParse.stringify(state) as any)
     )
 
     if (this.async) {
-      this.getState = options.getState ?
-        options.getState
-        : ((key: string, storage: AsyncStorage) => 
-          storage.getItem(key).then((value:any) =>
-            typeStr(value) === 'String' ?
-              jsonParse.parse(value || '{}')
-              : (value || {})
-          )
-        )
-        this.install = (store: Store<State>) => {
-          
-        }
+      this.getState = options.getState ? options.getState
+      : (key: string, storage: AsyncStorage) => {
+        return new Promise((resolve, reject) => {
+          storage.getItem(key).then((value:any) => {
+            typeStr(value) === 'String' ? resolve(this.jsonParse.parse(value || '{}')) : resolve(value || {})
+          })
+        })
+      }
+      
+
+      this.install = async (store: Store<State>) => {
+
+        const initState = await this.getState(this.key, this.storage);
+        // store.commit(this.key + 'INSTALLED', true)
+        const currentState = this.initStorage ? initState : {}
+        const reState = this.overwrite ? initState : merge(store.state, currentState || {}, this.deepMergeOptions)
+        store.replaceState(reState as State)
+
+        this.subscribe(store)((mutation: MutationPayload, state: State) => {
+          if (this.filter(mutation)) {
+            this.setState(this.key, this.reducer(state), this.storage)
+          }
+        })
+      }
     } else {
       this.getState = options.getState ?
         options.getState
@@ -101,11 +109,10 @@ export class VuexRefeshStorage<State> implements Options<State> {
           const value = storage.getItem(key)
           if (typeStr(value) === 'String') {
             try {
-              return jsonParse.parse(value || '{}')
+              return this.jsonParse.parse(value || '{}')
             } catch (err) {
               throw new Error(err)
             }
-        
           } else {
             return value || {}
           }
@@ -113,41 +120,25 @@ export class VuexRefeshStorage<State> implements Options<State> {
 
         this.install = (store: Store<State>) => {
           const initState = this.initStorage ? this.getState(this.key, this.storage) : {}
-          // console.log('initState: ', initState);
-          const reState = this.overwrite ? initState : merge(store.state, initState || {}, {})
-          // console.log('reState: ', reState);
+          const reState = this.overwrite ? initState : merge(store.state, initState || {}, this.deepMergeOptions)
           store.replaceState(reState as State)
 
           this.subscribe(store)((mutation: MutationPayload, state: State) => {
-            // console.log('this.filter(mutation): ', this.filter(mutation));
             if (this.filter(mutation)) {
-              // console.log('this.reducer(state): ', this.reducer(state));
+              // console.log('this.filter(mutation): ', this.reducer(state), state, options?.modules);
               this.setState(this.key, this.reducer(state), this.storage)
             }
           })
         }
     }
     /**
-     * How this works is -
-     *  1. If there is options.reducer function, we use that, if not;
-     *  2. We check options.modules;
-     *    1. If there is no options.modules array, we use entire state in reducer
-     *    2. Otherwise, we create a reducer that merges all those state modules that are
-     *        defined in the options.modules[] array
+     * replace is not modules key
      * @type {((state: S) => {}) | ((state: S) => S) | ((state: any) => {})}
      */
-     this.reducer = (
-      (options.reducer != null)
-        ? options.reducer
-        : (
-          (options.modules == null)
-            ? ((state: State) => state)
-            : (
-              (state: any) =>
-                (options!.modules as string[]).reduce((a, i) =>
-                  merge(a, { [i]: state[i] }, {}), {/* start empty accumulator*/ })
-            )
-        )
-      )
+    this.reducer = options.reducer || (
+      (options.modules == null)
+        ? (state: State) => state
+        : (state: any) => (options!.modules as string[]).reduce((a, i) => merge(a, { [i]: state[i] }, this.deepMergeOptions), {/* start empty accumulator*/ })
+    )
   }
 }

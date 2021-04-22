@@ -3,7 +3,7 @@
  * @Author: 19080088
  * @Date: 2021-04-19 08:51:29
  * @LastEditors: 19080088
- * @LastEditTime: 2021-04-20 18:04:31
+ * @LastEditTime: 2021-04-22 17:15:49
  */
 import { Store, MutationPayload } from 'vuex'
 import { AsyncStorage } from './AsyncStorage'
@@ -15,7 +15,11 @@ export interface Options<State> {
   */
   key?: string
   /**
-   * store module
+   * deepmerge use options
+   */
+  deepMergeOptions?: object
+  /**
+   * modules
    */
   modules?: string[]
   /**
