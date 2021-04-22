@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import Vuex, { Store } from 'vuex';
+import Vuex, { Store, MutationPayload } from 'vuex';
 // @ts-ignore
 import Storage from 'dom-storage';
 
@@ -8,8 +8,8 @@ const newJSON = require('flatted');
 import { VuexRefeshStorage } from '../src/index';
 
 Vue.use(Vuex)
-
 const storage = new Storage();
+const objStorage: any = {}
 
 describe("test: options", () => {
   it("test: options custome", () => {
@@ -28,7 +28,7 @@ describe("test: options", () => {
     expect(vuexRefeshStorage.overwrite).toBe(true);
     expect(vuexRefeshStorage.key).toBe('custumer');
     expect(storage.getItem('custumer')).toBe(null);
-  })
+  });
 
   it("test: options.initStorage: false or true ", () => {
     // options.initStorage: true
@@ -82,7 +82,7 @@ describe("test: options", () => {
     expect(storeTwo.state).toEqual({
       normal: 'default'
     })
-  })
+  });
 
   it("test: modules", () => {
     storage.clear();
@@ -110,7 +110,7 @@ describe("test: options", () => {
 
     store.commit('custom/changeState');
     expect(storage.getItem('custom')).toBe(JSON.stringify({custom: { change: "state" }}))
-  })
+  });
 
   it("test: flatted to should not clone circular objects", () => {
     storage.clear();
@@ -137,7 +137,7 @@ describe("test: options", () => {
     vuexRefeshStorage.install(store);
     store.commit('updateState')
     expect(storage.getItem('vuex')).toBe(newJSON.stringify({ circularState: initState }))
-  })
+  });
 
   it("should not persist whole store if modules array is empty", () => {
     storage.clear();
@@ -162,7 +162,7 @@ describe("test: options", () => {
     vuexRefeshStorage.install(store);
     store.commit('updateState');
     expect(storage.getItem('common')).toBe(JSON.stringify({}))
-  })
+  });
 
   it("should not persist whole store if modules array", () => {
     storage.clear();
@@ -190,7 +190,7 @@ describe("test: options", () => {
     expect(storage.getItem('common')).toBe(JSON.stringify({circularState: {
       name: '12312'
     }}))
-  })
+  });
 
   it("should not persist null values", () => {
     storage.clear();
@@ -214,7 +214,7 @@ describe("test: options", () => {
       orignal: '222',
       default: null
     }))
-  })
+  });
   it("should not merge array values when rehydrating by default", () => {
     storage.clear();
 
@@ -234,43 +234,111 @@ describe("test: options", () => {
       persisted: ["state", "json"]
     });
     expect(store.subscribe).toBeCalled()
-  })
+  });
 
-  it("should apply a custom arrayMerger function", () => {
+it("should apply a custom arrayMerger function", () => {
+  storage.clear();
+
+  storage.setItem("vuex", JSON.stringify({ persisted: [1, 2] }));
+
+  const store = new Vuex.Store({ state: { persisted: [1, 2, 3] } });
+  store.replaceState = jest.fn();
+  store.subscribe = jest.fn();
+
+  const vuexRefeshStorage = new VuexRefeshStorage({
+    storage,
+    deepMergeOptions: {
+      arrayMerge: function (store:any, saved:any) {
+        return ["hello!"];
+      }
+    }
+  });
+  vuexRefeshStorage.install(store)
+  expect(store.replaceState).toBeCalledWith({
+    persisted: ["hello!"],
+  });
+  expect(store.subscribe).toBeCalled();
+  });
+
+  // it("rehydrates store's state through the configured getter", () => {
+  //   storage.clear();
+  //   const store = new Vuex.Store({
+  //     state: {}
+  //   });
+  //   store.replaceState = jest.fn();
+  //   const vuexRefeshStorage = new VuexRefeshStorage({
+  //     storage,
+  //     getState: (key, storage) => () => ({ getter: "item" })
+  //   });
+  //   vuexRefeshStorage.install(store);
+  //   expect(store.replaceState).toBeCalledWith({ getter: "item" });
+  // })
+  it("persist the changed state back through the configured setter", () => {
+    expect.assertions(1);
     storage.clear();
 
-    storage.setItem("vuex", JSON.stringify({ persisted: [1, 2] }));
-
-    const store = new Vuex.Store({ state: { persisted: [1, 2, 3] } });
-    store.replaceState = jest.fn();
-    store.subscribe = jest.fn();
-
-    const vuexRefeshStorage = new VuexRefeshStorage({
-      storage,
-      deepMergeOptions: {
-        arrayMerge: function (store:any, saved:any) {
-          return ["hello!"];
+    const store = new Vuex.Store({
+      state: {
+        setter: ''
+      },
+      mutations: {
+        setCommit (state) {
+          state.setter = "item"
         }
       }
     });
-    vuexRefeshStorage.install(store)
-    expect(store.replaceState).toBeCalledWith({
-      persisted: ["hello!"],
+    const vuexRefeshStorage = new VuexRefeshStorage({
+      storage,
+      setState: (key, state) => {
+        expect(state).toEqual({ setter: "item" })
+      }
     });
-    expect(store.subscribe).toBeCalled();
-    })
 
-    it("rehydrates store's state through the configured getter", () => {
-      storage.clear();
-      const store = new Vuex.Store({
-        state: {}
-      });
-      store.replaceState = jest.fn();
-      const vuexRefeshStorage = new VuexRefeshStorage({
-        storage,
-        getState: () => ({ getter: "item" })
-      });
-      vuexRefeshStorage.install(store);
-      expect(store.replaceState).toBeCalledWith({ getter: "item" });
-    })
+    vuexRefeshStorage.install(store);
+    store.commit('setCommit')
+  });
+
+  it("filters to specific mutations", () => {
+    storage.clear();
+    const store = new Vuex.Store({
+      state: {
+        normal: ''
+      },
+      mutations: {
+        defaultCommit (state, newVal) {
+          state.normal = newVal
+        },
+        filter (state, newVal) {
+          state.normal = newVal
+        }
+      }
+    });
+    const vuexRefeshStorage = new VuexRefeshStorage({
+      storage,
+      filter: (mutation) => mutation.type === 'filter'
+    });
+    vuexRefeshStorage.install(store);
+    store.commit('defaultCommit', 'state');
+    expect(storage.getItem('vuex')).toBeNull()
+    store.commit('filter', 'state');
+    expect(storage.getItem('vuex')).toBe(JSON.stringify({normal: 'state'}))
+  })
+
+  it("should call rehydrated callback once the state is replaced", () => {
+    storage.clear();
+
+    storage.setItem('vuex', JSON.stringify({ persisted: "json" }));
+    const store = new Vuex.Store({
+      state: { original: "state" }
+    });
+    const initAfterFunction = jest.fn();
+
+    const vuexRefeshStorage = new VuexRefeshStorage({
+      storage,
+      initAfterFunction
+    });
+    vuexRefeshStorage.install(store);
+
+    expect(initAfterFunction).toBeCalledWith(store);
+  });
 })

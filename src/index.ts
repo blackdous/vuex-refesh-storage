@@ -40,6 +40,7 @@ export class VuexRefeshStorage<State> implements Options<State> {
   public setState: (key: string, state: any, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
   public reducer: (state: State) => Partial<State>
   public filter: (mutation: Payload) => boolean
+  public initAfterFunction: (store: Store<State>) => {}
 
 
   /**
@@ -70,6 +71,9 @@ export class VuexRefeshStorage<State> implements Options<State> {
     this.overwrite = options.overwrite || false
     
     this.filter = options.filter || ((mutation) => true)
+    this.initAfterFunction = options.initAfterFunction || ((store) => {
+      return {}
+    })
     this.setState = (
       options.setState ? 
         options.setState : 
@@ -96,6 +100,7 @@ export class VuexRefeshStorage<State> implements Options<State> {
         const reState = this.overwrite ? initState : merge(store.state, currentState || {}, this.deepMergeOptions)
         store.replaceState(reState as State)
 
+        this.initAfterFunction(store)
         this.subscribe(store)((mutation: MutationPayload, state: State) => {
           if (this.filter(mutation)) {
             this.setState(this.key, this.reducer(state), this.storage)
@@ -120,10 +125,12 @@ export class VuexRefeshStorage<State> implements Options<State> {
 
         this.install = (store: Store<State>) => {
           const initState = this.initStorage ? this.getState(this.key, this.storage) : {}
+          // console.log('initState: ', this.getState(this.key, this.storage), initState);
           const reState = this.overwrite ? initState : merge(store.state, initState || {}, this.deepMergeOptions)
           store.replaceState(reState as State)
-
+          this.initAfterFunction(store)
           this.subscribe(store)((mutation: MutationPayload, state: State) => {
+            // console.log('mutation: ', mutation);
             if (this.filter(mutation)) {
               // console.log('this.filter(mutation): ', this.reducer(state), state, options?.modules);
               this.setState(this.key, this.reducer(state), this.storage)

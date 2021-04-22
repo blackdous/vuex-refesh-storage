@@ -1,6 +1,6 @@
 {
-  "name": "@blackdous/vuex_refesh_storage",
-  "version": "1.0.0",
+  "name": "vuex-refesh-storage",
+  "version": "0.1.0",
   "description": "A Vuex Refesh Storage plugin Typescript ",
   "main": "dist/cjs/index.js",
   "module": "dist/esm/index.js",

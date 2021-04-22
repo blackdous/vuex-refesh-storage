@@ -3,7 +3,7 @@
  * @Author: 19080088
  * @Date: 2021-04-19 08:51:29
  * @LastEditors: 19080088
- * @LastEditTime: 2021-04-22 17:15:49
+ * @LastEditTime: 2021-04-22 22:58:09
  */
 import { Store, MutationPayload } from 'vuex'
 import { AsyncStorage } from './AsyncStorage'
@@ -52,12 +52,16 @@ export interface Options<State> {
   /**
    * method to get state
    */
-  getState?: (key: string, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
+  getState?: (key: string, storage: Storage | AsyncStorage | DefaultStorage) => void | Promise<void>
   /**
    * filter state.replace
    */
   filter?: (mutation: MutationPayload) => boolean
-
+  // after Store.replaceState execution
+  initAfterFunction?: (store: Store<State>) => {}
+  /**
+   * filter modules 
+   */
   reducer?: (state: State) => {}
   /**
    * Method to retrieve state from persistence
