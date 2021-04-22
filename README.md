@@ -31,6 +31,43 @@
 
 ## 用法
 
-**vuex-refesh-storage**
+**vuex-refesh-storage (for Vuex# and Vue2)**
 
+**use JavaScript**
 
+```js
+  import Vuex from "vuex";
+  import VuexRefeshStorage from 'vue-refesh-storage';
+  const vuexRefeshStorage = new VuexRefeshStorage()
+  // vue 2
+  const store = new Vuex.Store({
+    plugins: [vuexRefeshStorage.install]
+  })
+```
+
+**use TypeScript**
+
+```js
+  import Vuex from "vuex";
+  import VuexRefeshStorage from 'vue-refesh-storage';
+  const vuexRefeshStorage = new VuexPersistence<RootState>({
+    storage: window.localStorage
+  })
+  // vue 2
+  const store = new Vuex.Store<State>({
+    plugins: [vuexRefeshStorage.install]
+  })
+```
+
+## API
+
+初始化参数`new VuexRefeshStorage([options])`。
+
+通过`new`实例化一个`VuexRefeshStorage`可以传入一下`options`定制一些功能。
+
+| Property | Type | Descript |
+| -------- | ---- | ---------------------------- |
+| key | string | 存储持久状态的密钥。默认为vuex。 |
+| modules | string[] | 您要保留的模块列表。（如果要使用此功能，请不要编写自己的reducer） |
+| storage | Storage(web API) | localStorage, sessionStorage, localforage 或者 自定义 Storage object. <br>一定要包含 setItem、getItem、clear <br> _**Default: window.localStorage**_  |
+| setState | function<br> (key, state[, storage]) | 存储持久状态的密钥。默认为vuex。 |
