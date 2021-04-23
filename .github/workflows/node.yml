@@ -1,4 +1,4 @@
-name: Node CI (tags and release)
+name: Node CI
 
 on: 
   push:
