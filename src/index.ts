@@ -96,7 +96,6 @@ export class VuexRefeshStorage<State> implements Options<State> {
         const currentState = this.initStorage ? initState : {};
         const reState = this.overwrite ? initState : merge(store.state, currentState || {}, this.deepMergeOptions);
         store.replaceState(reState as State);
-        // console.log('this.initAfterFunction: ', this.initAfterFunction);
         (this.initAfterFunction)(store);
         this.subscribe(store)((mutation: MutationPayload, state: State) => {
           if (this.filter(mutation)) {
@@ -143,3 +142,8 @@ export class VuexRefeshStorage<State> implements Options<State> {
     )
   }
 }
+export {
+  DefaultStorage, AsyncStorage, Options
+}
+
+export default VuexRefeshStorage
