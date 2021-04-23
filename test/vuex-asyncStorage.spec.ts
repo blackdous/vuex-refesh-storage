@@ -3,7 +3,6 @@ import Vuex, { Store, MutationPayload } from 'vuex';
 // @ts-ignore
 import Storage from 'dom-storage';
 
-
 import { VuexRefeshStorage } from '../src/index';
 import localForage from 'localforage';
 jest.setTimeout(10000)
@@ -32,12 +31,11 @@ Vue.use(Vuex)
 localForage.defineDriver(MockForageStorage as any)
 localForage.setDriver('objectStorage')
 
-const vuexPersist = new VuexRefeshStorage<any>({
+const vuexRefeshStorage = new VuexRefeshStorage<any>({
   storage: localForage,
   asyncMode: true,
-  key: 'dafuq',
+  key: 'vuex',
   reducer: (state) => ({ dog: state.dog }),
-  filter: (mutation) => (mutation.type === 'dogBark')
 })
 
 const store = new Store<any>({
@@ -57,21 +55,56 @@ const store = new Store<any>({
       state.cat.mews++
     }
   },
-  plugins: [vuexPersist.install]
+  plugins: [vuexRefeshStorage.install]
 })
 describe('Storage: AsyncStorage; Test: reducer, filter; Strict Mode: OFF', () => {
   it('should persist reduced state', async (done) => {
     await waitUntil(() => true);
-
     store.commit('dogBark')
-    const currentStorage = await localForage.getItem('dafuq')
-    console.log('dogBark', currentStorage, store.state)
+    const currentStorage = await localForage.getItem('vuex')
+    expect(currentStorage).toEqual({dog: { barks: 1 }})
     done();
   })
   it('should not persist non reduced state', async () => {
     store.commit('catMew')
-    const currentStorage = await localForage.getItem('dafuq')
-    console.log('currentStorage: ', currentStorage);
+    const currentStorage = await localForage.getItem('vuex');
+    // console.log('currentStorage: ', currentStorage);
+    expect(currentStorage).toEqual({dog: { barks: 1 }});
+  })
+
+  it("test: initAfterFunction", () => {
+    const storage = new Storage();
+    const store = new Store<any>({
+      state: { original: "state" }
+    });
+    const initAfterFunction = jest.fn();
+    const vuexRefeshStorage = new VuexRefeshStorage<any>({
+      storage: storage,
+      initAfterFunction
+    });
+    vuexRefeshStorage.install(store);
+    expect(initAfterFunction).toBeCalledWith(store);
+  })
+
+  it("test: async initAfterFunction should call rehydrated if the replacement executed asynchronously", () => {
+    jest.useFakeTimers();
+    localForage.clear();
+    const storage = new Storage();
+    storage.setItem("vuex", JSON.stringify({ persisted: "json" }));
+
+    setTimeout(() => {
+      (new VuexRefeshStorage({ storage, initAfterFunction })).install(store);
+    }, 600);
+    const store = new Vuex.Store({ state: { original: "state" } });
+    const initAfterFunction = jest.fn();
+
+    jest.runAllTimers();
+    const vuexRefeshStorage = new VuexRefeshStorage({ storage, initAfterFunction });
+    vuexRefeshStorage.install(store);
+
+    expect(initAfterFunction).toBeCalled();
+    const rehydratedStore = initAfterFunction.mock.calls[0][0];
+    expect(rehydratedStore.state.persisted).toBe("json");
   })
 })
 

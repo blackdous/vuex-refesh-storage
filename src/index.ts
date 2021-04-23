@@ -1,5 +1,4 @@
 import { MutationPayload, Payload, Plugin, Store } from 'vuex';
-import SimplePromiseQueue from './SimplePromiseQueue'
 import { AsyncStorage } from './AsyncStorage';
 import DefaultStorage from './DefaultStorage';
 import { Options } from './Options';
@@ -48,9 +47,6 @@ export class VuexRefeshStorage<State> implements Options<State> {
    * store plugin functions
    */
   public install: Plugin<State>
-
-  // tslint:disable-next-line:variable-name
-  private _mutex = new SimplePromiseQueue()
   /**
    * Creates a subscriber on the store. automatically is used
    * when this is used a vuex plugin. Not for manual usage.
@@ -74,7 +70,10 @@ export class VuexRefeshStorage<State> implements Options<State> {
     this.overwrite = options.overwrite || false
     
     this.filter = options.filter || ((mutation) => true)
-    this.initAfterFunction = options.initAfterFunction || (function (store) {})
+
+    this.initAfterFunction = options.initAfterFunction || function () {}
+
+    // setState
     this.setState = (
       options.setState ? 
         options.setState : 
@@ -89,77 +88,19 @@ export class VuexRefeshStorage<State> implements Options<State> {
           typeStr(value) === 'String' ? this.jsonParse.parse(value || '{}'): (value || {})
         })
       }
-      // /**
-      //  * Async {@link #VuexPersistence.restoreState} implementation
-      //  * @type {((key: string, storage?: Storage) =>
-      //  *      (Promise<S> | S)) | ((key: string, storage: AsyncStorage) => Promise<any>)}
-      // */
-      // this.getState = (
-      //   (options.getState != null)
-      //     ? options.getState
-      //     : ((key: string, storage: AsyncStorage) =>
-      //       (storage).getItem(key)
-      //         .then((value) =>
-      //           typeof value === 'string' // If string, parse, or else, just return
-      //             ? (this.jsonParse.parse(value || '{}'))
-      //             : (value || {})
-      //         )
-      //     )
-      // )
-      // /**
-      //  * Async {@link #VuexPersistence.saveState} implementation
-      //  * @type {((key: string, state: {}, storage?: Storage) =>
-      //   *    (Promise<void> | void)) | ((key: string, state: {}, storage?: Storage) => Promise<void>)}
-      //   */
-      // this.setState = (
-      //   (options.setState != null)
-      //     ? options.setState
-      //     : ((key: string, state: {}, storage: AsyncStorage) =>
-      //       (storage).setItem(
-      //         key, // Second argument is state _object_ if asyc storage, stringified otherwise
-      //         // do not stringify the state if the storage type is async
-      //         (this.asyncMode
-      //           ? merge({}, state || {}, this.deepMergeOptions)
-      //           : (this.jsonParse.stringify(state) as any)
-      //         )
-      //       )
-      //     )
-      // )
-
+      /**
+       * vuex plugin install Function use init 
+       */
       this.install = async (store: Store<State>) => {
-
-        // (store as any).restored = ((this.getState(this.key, this.storage)) as Promise<State>).then((savedState) => {
-        //   console.log('savedState: ', savedState, this.key);
-        //   /**
-        //    * If in strict mode, do only via mutation
-        //    */
-        //   // if (this.strictMode) {
-        //   //   store.commit('RESTORE_MUTATION', savedState)
-        //   // } else {
-        //   store.replaceState(merge(store.state, savedState || {}, this.deepMergeOptions) as State)
-        //   // }
-        //   this.subscribe(store)((mutation: MutationPayload, state: State) => {
-        //     console.log('this.filter(mutation): ', this.filter(mutation));
-        //     if (this.filter(mutation)) {
-        //       this._mutex.enqueue(
-        //         this.setState(this.key, this.reducer(state), this.storage) as Promise<void>
-        //       )
-        //     }
-        //   })
-        // })
-
         const initState = await this.getState(this.key, this.storage);
-        const currentState = this.initStorage ? initState : {}
-        const reState = this.overwrite ? initState : merge(store.state, currentState || {}, this.deepMergeOptions)
-        console.log('reState: ', reState);
-        store.replaceState(reState as State)
-
-        this.initAfterFunction(store)
+        const currentState = this.initStorage ? initState : {};
+        const reState = this.overwrite ? initState : merge(store.state, currentState || {}, this.deepMergeOptions);
+        store.replaceState(reState as State);
+        // console.log('this.initAfterFunction: ', this.initAfterFunction);
+        (this.initAfterFunction)(store);
         this.subscribe(store)((mutation: MutationPayload, state: State) => {
-          // console.log('this.filter(mutation): ', mutation, this.filter(mutation));
           if (this.filter(mutation)) {
-            this.setState(this.key, this.reducer(state), this.storage)
-            // this._mutex.enqueue(this.setState(this.key, this.reducer(state), this.storage))
+            this.setState(this.key, this.reducer(state), this.storage);
           }
         })
       }
@@ -180,15 +121,12 @@ export class VuexRefeshStorage<State> implements Options<State> {
         })
 
         this.install = (store: Store<State>) => {
-          const initState = this.initStorage ? this.getState(this.key, this.storage) : {}
-          // console.log('initState: ', this.getState(this.key, this.storage), initState);
-          const reState = this.overwrite ? initState : merge(store.state, initState || {}, this.deepMergeOptions)
-          store.replaceState(reState as State)
-          this.initAfterFunction(store)
+          const initState = this.initStorage ? this.getState(this.key, this.storage) : {};
+          const reState = this.overwrite ? initState : merge(store.state, initState || {}, this.deepMergeOptions);
+          store.replaceState(reState as State);
+          (this.initAfterFunction)(store);
           this.subscribe(store)((mutation: MutationPayload, state: State) => {
-            // console.log('mutation: ', mutation);
             if (this.filter(mutation)) {
-              // console.log('this.filter(mutation): ', this.reducer(state), state, options?.modules);
               this.setState(this.key, this.reducer(state), this.storage)
             }
           })
