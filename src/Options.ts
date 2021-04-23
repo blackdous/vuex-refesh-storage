@@ -1,10 +1,3 @@
-/*
- * @Descripttion: 
- * @Author: 19080088
- * @Date: 2021-04-19 08:51:29
- * @LastEditors: 19080088
- * @LastEditTime: 2021-04-23 10:47:01
- */
 import { Store, MutationPayload } from 'vuex'
 import { AsyncStorage } from './AsyncStorage'
 import DefaultStorage from './DefaultStorage'

@@ -47,7 +47,7 @@ describe('defaultStorage test', () => {
       },
       plugins: [vuexRefeshStorage.install]
     });
-    const getStorageState = () => JSON.parse(vuexRefeshStorage.storage.getItem('vuex'))
+    const getStorageState = () => JSON.parse(storage.getItem('vuex'))
 
     store.commit('addCount')
     expect(getStorageState().count).toBe(1)
