@@ -2,9 +2,6 @@ name: Node CI
 
 on: 
   push:
-    branches:
-      - main
-    # Sequence of patterns matched against refs/tags
     tags:
       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
@@ -43,7 +40,7 @@ jobs:
           node-version: 12
       - name: Create Release # 创建Release，可以在仓库看到一个个版本
         id: create_release
-        uses: actions/create-release@master
+        uses: actions/create-release@main
         env:
           GITHUB_TOKEN: ${{ secrets.TOKEN }} # 之前GitHub添加的Token
         with:
