@@ -4,8 +4,9 @@ on:
   push:
     branches:
       - main
+    # Sequence of patterns matched against refs/tags
     tags:
-      - v*
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 jobs:
   test:
@@ -18,8 +19,8 @@ jobs:
       - run: npm install
       - run: npm run build
       - run: npm run test:all
-  publish-npm:
-    needs: test
+  publish:
+    needs: [test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v1
@@ -27,11 +28,14 @@ jobs:
         with:
           node-version: 12
           registry-url: 'https://registry.npmjs.org/'
-      - run: npm i
+      - run: npm install
+      - run: npm run build
       - run: npm publish || true
         env:
           NODE_AUTH_TOKEN: '${{secrets.NPM_TOKEN}}'
   build:
+    name: Publish
+    needs: [test, publish]
     runs-run: ubuntu-latest
     steps:
     - uses: actions/checkout@v1
