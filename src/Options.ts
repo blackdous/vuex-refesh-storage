@@ -3,7 +3,7 @@
  * @Author: 19080088
  * @Date: 2021-04-19 08:51:29
  * @LastEditors: 19080088
- * @LastEditTime: 2021-04-22 22:58:09
+ * @LastEditTime: 2021-04-23 10:47:01
  */
 import { Store, MutationPayload } from 'vuex'
 import { AsyncStorage } from './AsyncStorage'
@@ -33,7 +33,7 @@ export interface Options<State> {
   /**
    * Window.Storage type object. Default is localStorage
   */
-  storage?: Storage | DefaultStorage | AsyncStorage
+  storage?: AsyncStorage| Storage | DefaultStorage
   /**
    * default window.JSON or flatted
    */
@@ -41,7 +41,7 @@ export interface Options<State> {
   /**
    * storage is AsyncStorage
    */
-  async?: boolean
+   asyncMode?: boolean
   /**
    * method to set state
    * @param key
@@ -52,13 +52,13 @@ export interface Options<State> {
   /**
    * method to get state
    */
-  getState?: (key: string, storage: Storage | AsyncStorage | DefaultStorage) => void | Promise<void>
+  getState?: (key: string, storage: Storage | AsyncStorage | DefaultStorage) => void | Promise<void> | Promise<State> | State
   /**
    * filter state.replace
    */
   filter?: (mutation: MutationPayload) => boolean
   // after Store.replaceState execution
-  initAfterFunction?: (store: Store<State>) => {}
+  initAfterFunction?: (store: Store<State>) => void
   /**
    * filter modules 
    */

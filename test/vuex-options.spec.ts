@@ -3,9 +3,10 @@ import Vuex, { Store, MutationPayload } from 'vuex';
 // @ts-ignore
 import Storage from 'dom-storage';
 
+import { VuexRefeshStorage } from '../src/index';
+
 const newJSON = require('flatted');
 
-import { VuexRefeshStorage } from '../src/index';
 
 Vue.use(Vuex)
 const storage = new Storage();
@@ -14,7 +15,7 @@ const objStorage: any = {}
 describe("test: options", () => {
   it("test: options custome", () => {
     const vuexRefeshStorage = new VuexRefeshStorage({
-      async: true,
+      asyncMode: true,
       initStorage: false,
       overwrite: true,
       key: 'custumer', 
@@ -23,7 +24,7 @@ describe("test: options", () => {
     const store = new Vuex.Store({ state: {} });
     vuexRefeshStorage.install(store)
 
-    expect(vuexRefeshStorage.async).toBe(true);
+    expect(vuexRefeshStorage.asyncMode).toBe(true);
     expect(vuexRefeshStorage.initStorage).toBe(false);
     expect(vuexRefeshStorage.overwrite).toBe(true);
     expect(vuexRefeshStorage.key).toBe('custumer');
