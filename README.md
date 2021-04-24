@@ -3,7 +3,7 @@
 本项目是一个[Vuex](https://vuex.vuejs.org/) plugin，用于自动把store中的数据永久存储，例如localStorage、Cookies、localForage。
 
 **package status**
-[![GitHub stars](https://img.shields.io/github/stars/championswimmer/vuex-persist.svg?style=social&label=%20vuex-refesh-storage)](http://github.com/blackdous/vuex-refesh-storage)
+[![GitHub stars](https://img.shields.io/github/stars/blackdous/vuex-refesh-storage.svg?style=social&label=%20vuex-refesh-storage)](http://github.com/blackdous/vuex-refesh-storage)
 [![npm](https://img.shields.io/npm/v/vuex-refesh-storage.svg?colorB=dd1100)](http://npmjs.com/vuex-refesh-storage)
 [![npm](https://img.shields.io/npm/dw/vuex-refesh-storage.svg?colorB=fc4f4f)](http://npmjs.com/vuex-refesh-storage)
 [![license](https://img.shields.io/github/license/blackdous/vuex-refesh-storage.svg)]()
@@ -134,3 +134,9 @@ const store = new Store({
 结合`store`中的`modules`使用，这是一个比较实用的样例。
 
 在`vue-cli`中结合`modules`使用。
+[![Edit boring-architecture-huksu](https://codesandbox.io/static/img/play-codesandbox.svg)](https://codesandbox.io/s/boring-architecture-huksu?fontsize=14&hidenavigation=1&theme=dark)
+
+### nuxt.js中使用
+
+在`nuxt`中结合`modules`使用。
+
