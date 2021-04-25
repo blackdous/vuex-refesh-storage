@@ -2,6 +2,11 @@
 
 本项目是一个[Vuex](https://vuex.vuejs.org/) plugin，用于自动把store中的数据永久存储，例如localStorage、Cookies、localForage。
 
+**注意**
+
+1. 关于`localForage`只是初步这么实现，如果有好的意见可以讨论。
+2. 本项目支持`TypeScript`
+
 **package status**
 [![GitHub stars](https://img.shields.io/github/stars/blackdous/vuex-refesh-storage.svg?style=social&label=%20vuex-refesh-storage)](http://github.com/blackdous/vuex-refesh-storage)
 [![npm](https://img.shields.io/npm/v/vuex-refesh-storage.svg?colorB=dd1100)](http://npmjs.com/vuex-refesh-storage)
@@ -139,4 +144,77 @@ const store = new Store({
 ### nuxt.js中使用
 
 在`nuxt`中结合`modules`使用。
+
+**store/common/index.js**
+
+```js
+  import VuexRefeshStorage from 'vuex-refesh-storage'
+  export const vuexCommonState = new VuexRefeshStorage({
+    key: 'common',
+    storage: window.sessionStorage
+  })
+  export const state = () => ({
+    name: 'common'
+    nubOnlinecountDown: 0,
+    nubOnlineTime: 60,
+    currentNow: new Date().getTime()
+  })
+  export const mutations = {
+    setNubOnlinecountDown (state, newValue) {
+      state.nubOnlinecountDown = newValue
+    }
+  }
+```
+
+**store/index.js**
+
+```js
+  import { vuexCommonState } from './common'
+  export const plugins = [vuexCommonState.install]
+```
+
+`nuxt`中可以自动读取`store`文件下的`modules`模块并且生成可用的`vuex`代码。
+
+## 结合localForage使用
+
+因为`WebSQL`和`IndexedDB`都是异步操作，它们也可以存入对象、typeArray、ArrayBuffer等等类型。以`localForage`为例：
+
+`window.localStorage`为例，传入的`storage`的对象为以下类型(**TypeScript**)：
+
+```js
+// 传入的同步storage类型
+
+interface Storage {
+  readonly length: number
+  clear(): void
+  getItem(key: string): string | null
+  key(index: number): string | null
+  removeItem(key: string): void
+  setItem(key: string, data: string): void
+  [key: string]: any
+  [index: number]: string
+}
+```
+
+如果使用类似于`localForage`的类型(**TypeScript**):
+
+```js
+  // 传入异步storage类型
+  export interface AsyncStorage {
+    _config?: {
+      name: string
+    }
+    getItem<T>(key: string, callback?: (err: any, value: T | null) => void): Promise<T | null>;
+    setItem<T>(key: string, value: T, callback?: (err: any, value: T) => void): Promise<T>;
+    removeItem(key: string, callback?: (err: any) => void): Promise<void>;
+    clear(callback?: (err: any) => void): Promise<void>;
+    length(callback?: (err: any, numberOfKeys: number) => void): Promise<number>;
+    key(keyIndex: number, callback?: (err: any, key: string) => void): Promise<string>;
+    keys(callback?: (err: any, keys: string[]) => void): Promise<string[]>;
+  }
+```
+
+如`localForage`中的`setItem/getItem`都可以是异步的操作，在插件初始化的时候并不能保证`getItem`获取的时机是准确的，所以这里提供了`initAfterFunction`参数，即使`getItem`是异步的也可以保证这个方法会在`getItem`执行完成之后才运行。
+
+如果在使用`localForage`中的`setItem`、`getItem`方法做一些异步定制操作，可以通过重写`options.setState/options.getState`方法。
 
