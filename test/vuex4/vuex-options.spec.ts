@@ -1,34 +1,38 @@
-import Vue from 'vue';
-import Vuex, { Store, MutationPayload } from 'vuex';
+import { createStore } from 'vuex';
 // @ts-ignore
 import Storage from 'dom-storage';
 
-import { VuexRefeshStorage } from '../src/index';
+import { VuexRefeshStorage } from '../../src/index';
+
+const storage = new Storage();
 
 const newJSON = require('flatted');
 
-
-Vue.use(Vuex)
-const storage = new Storage();
 const objStorage: any = {}
 
 describe("test: options", () => {
   it("test: options custome", () => {
-    const vuexRefeshStorage = new VuexRefeshStorage({
-      asyncMode: true,
-      initStorage: false,
-      overwrite: true,
-      key: 'custumer', 
-      storage
-    });
-    const store = new Vuex.Store({ state: {} });
-    vuexRefeshStorage.install(store)
-
-    expect(vuexRefeshStorage.asyncMode).toBe(true);
-    expect(vuexRefeshStorage.initStorage).toBe(false);
-    expect(vuexRefeshStorage.overwrite).toBe(true);
-    expect(vuexRefeshStorage.key).toBe('custumer');
-    expect(storage.getItem('custumer')).toBe(null);
+    try {
+      const vuexRefeshStorage = new VuexRefeshStorage({
+        asyncMode: true,
+        initStorage: false,
+        overwrite: true,
+        key: 'custumer', 
+        storage
+      });
+      const store = createStore({ state: () => {}});
+      vuexRefeshStorage.install(store)
+  
+      expect(vuexRefeshStorage.asyncMode).toBe(true);
+      expect(vuexRefeshStorage.initStorage).toBe(false);
+      expect(vuexRefeshStorage.overwrite).toBe(true);
+      expect(vuexRefeshStorage.key).toBe('custumer');
+      expect(storage.getItem('custumer')).toBe(null);
+      
+    } catch (error) {
+      console.log('error: ', error);
+      throw error
+    }
   });
 
   it("test: options.initStorage: false or true ", () => {
@@ -38,7 +42,7 @@ describe("test: options", () => {
       initStorage: true,
       storage
     })
-    const store = new Vuex.Store({ state: {} });
+    const store = createStore({ state: {} });
 
     vuexRefeshStorage.install(store)
     expect(store.state).toEqual({ normal: 'default' });
@@ -50,7 +54,7 @@ describe("test: options", () => {
       initStorage: false,
       storage
     })
-    const storeTwo = new Vuex.Store({ state: {} });
+    const storeTwo = createStore({ state: {} });
     vuexRefeshStorageTwo.install(storeTwo);
     expect(storeTwo.state).toEqual({});
 
@@ -61,7 +65,7 @@ describe("test: options", () => {
     const vuexRefeshStorage = new VuexRefeshStorage({
       storage
     })
-    const store = new Vuex.Store({ state: {
+    const store = createStore({ state: {
       common: 'common'
     } });
     vuexRefeshStorage.install(store)
@@ -76,7 +80,7 @@ describe("test: options", () => {
       overwrite: true,
       storage
     })
-    const storeTwo = new Vuex.Store({ state: {
+    const storeTwo = createStore({ state: {
       common: 'common'
     } });
     vuexRefeshStorageTwo.install(storeTwo)
@@ -91,7 +95,7 @@ describe("test: options", () => {
       key: 'custom',
       storage
     })
-    const store = new Vuex.Store({ 
+    const store = createStore({ 
       modules: {
         custom: {
           namespaced: true,
@@ -125,7 +129,7 @@ describe("test: options", () => {
       circleState: {}
     }
     initState.circleState = initState;
-    const store = new Vuex.Store({
+    const store = createStore({
       state: {
         circularState: {}
       },
@@ -142,7 +146,7 @@ describe("test: options", () => {
 
   it("should not persist whole store if modules array is empty", () => {
     storage.clear();
-    const store = new Vuex.Store({
+    const store = createStore({
       state: {
         circularState: {
           name: ''
@@ -167,7 +171,7 @@ describe("test: options", () => {
 
   it("should not persist whole store if modules array", () => {
     storage.clear();
-    const store = new Vuex.Store({
+    const store = createStore({
       state: {
         circularState: {
           name: ''
@@ -195,7 +199,7 @@ describe("test: options", () => {
 
   it("should not persist null values", () => {
     storage.clear();
-    const store = new Vuex.Store({
+    const store = createStore({
       state: {
         orignal: 'default',
         default: null
@@ -221,7 +225,7 @@ describe("test: options", () => {
 
     storage.setItem("vuex", JSON.stringify({persisted: ["json"]}));
 
-    const store = new Vuex.Store({ state: { persisted: ["state"] } });
+    const store = createStore({ state: { persisted: ["state"] } });
     store.replaceState = jest.fn();
     store.subscribe = jest.fn();
 
@@ -242,7 +246,7 @@ it("should apply a custom arrayMerger function", () => {
 
   storage.setItem("vuex", JSON.stringify({ persisted: [1, 2] }));
 
-  const store = new Vuex.Store({ state: { persisted: [1, 2, 3] } });
+  const store = createStore({ state: { persisted: [1, 2, 3] } });
   store.replaceState = jest.fn();
   store.subscribe = jest.fn();
 
@@ -263,7 +267,7 @@ it("should apply a custom arrayMerger function", () => {
 
   // it("rehydrates store's state through the configured getter", () => {
   //   storage.clear();
-  //   const store = new Vuex.Store({
+  //   const store = createStore({
   //     state: {}
   //   });
   //   store.replaceState = jest.fn();
@@ -278,7 +282,7 @@ it("should apply a custom arrayMerger function", () => {
     expect.assertions(1);
     storage.clear();
 
-    const store = new Vuex.Store({
+    const store = createStore({
       state: {
         setter: ''
       },
@@ -301,7 +305,7 @@ it("should apply a custom arrayMerger function", () => {
 
   it("filters to specific mutations", () => {
     storage.clear();
-    const store = new Vuex.Store({
+    const store = createStore({
       state: {
         normal: ''
       },
@@ -329,7 +333,7 @@ it("should apply a custom arrayMerger function", () => {
     storage.clear();
 
     storage.setItem('vuex', JSON.stringify({ persisted: "json" }));
-    const store = new Vuex.Store({
+    const store = createStore({
       state: { original: "state" }
     });
     const initAfterFunction = jest.fn();

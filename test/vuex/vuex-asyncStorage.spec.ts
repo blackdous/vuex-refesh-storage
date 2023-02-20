@@ -1,9 +1,8 @@
-import Vue from 'vue';
 import Vuex, { Store, MutationPayload } from 'vuex';
 // @ts-ignore
 import Storage from 'dom-storage';
 
-import { VuexRefeshStorage } from '../src/index';
+import { VuexRefeshStorage } from '../../src/index';
 import localForage from 'localforage';
 jest.setTimeout(10000)
 
@@ -26,7 +25,6 @@ const MockForageStorage = {
   }
 }
 
-Vue.use(Vuex)
 
 localForage.defineDriver(MockForageStorage as any)
 localForage.setDriver('objectStorage')

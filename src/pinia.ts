@@ -1,4 +1,5 @@
-import { MutationPayload, Payload, Plugin, Store } from 'vuex';
+import { Pinia, Store, PiniaPlugin, PiniaPluginContext } from 'pinia';
+// import { MutationPayload, Payload, Plugin, Store } from 'vuex';
 import { AsyncStorage } from './AsyncStorage';
 import DefaultStorage from './DefaultStorage';
 import { Options } from './Options';
@@ -40,13 +41,13 @@ export class VuexRefeshStorage<State> implements Options<State> {
   public setState: (key: string, state: any, storage: Storage | AsyncStorage | DefaultStorage) => Promise<void> | void
   public reducer: (state: State) => Partial<State>
   public filter: (mutation: Payload) => boolean
-  public initAfterFunction: (store: Store<State>) => void
+  public initAfterFunction: (store: Pinia) => void
 
 
   /**
    * store plugin functions
    */
-  public install: Plugin<State>
+  public install: PiniaPlugin<State>
   /**
    * Creates a subscriber on the store. automatically is used
    * when this is used a vuex plugin. Not for manual usage.
@@ -96,7 +97,7 @@ export class VuexRefeshStorage<State> implements Options<State> {
           const initState = await this.getState(this.key, this.storage);
           const currentState = this.initStorage ? initState : {};
           const reState = this.overwrite ? initState : merge(store.state, currentState || {}, this.deepMergeOptions);
-          store.replaceState(reState as State);
+          // store.replaceState(reState as State);
           (this.initAfterFunction)(store);
           this.subscribe(store)((mutation: MutationPayload, state: State) => {
             if (this.filter(mutation)) {
@@ -127,7 +128,7 @@ export class VuexRefeshStorage<State> implements Options<State> {
           this.install = (store: Store<State>) => {
             const initState = this.initStorage ? this.getState(this.key, this.storage) : {};
             const reState = this.overwrite ? initState : merge(store.state, initState || {}, this.deepMergeOptions);
-            store.replaceState(reState as State);
+            // store.replaceState(reState as State);
             (this.initAfterFunction)(store);
             this.subscribe(store)((mutation: MutationPayload, state: State) => {
               if (this.filter(mutation)) {

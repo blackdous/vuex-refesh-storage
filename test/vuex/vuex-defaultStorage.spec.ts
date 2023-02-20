@@ -1,13 +1,9 @@
-import Vue from 'vue';
 import Vuex from 'vuex';
 // @ts-ignore
 import Storage from 'dom-storage';
 
-import { VuexRefeshStorage } from '../src/index';
+import { VuexRefeshStorage } from '../../src/index';
 
-Vue.config.productionTip = false;
-
-Vue.use(Vuex);
 const storage = new Storage();
 
 describe('defaultStorage test', () => {
